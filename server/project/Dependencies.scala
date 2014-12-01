@@ -60,6 +60,9 @@ object Dependencies {
   // Etcd Client
   val etcd_client           = "net.nikore.etcd"    %% "scala-etcd"      % "0.7"
 
+  // Mocking
+  val wiremock = "com.github.tomakehurst" % "wiremock" % "1.52"
+
   // Testing
   val scalatest    = "org.scalatest"    %% "scalatest"    % "2.2.1"
   val scalacheck   = "org.scalacheck"   %% "scalacheck"   % "1.11.6"

@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   akka.cluster,
   akka.contrib,
   akka.persistence,
+  akka.persistence_cassandra,
   // Spray + Json
   spray.routing,
   spray.can,
@@ -17,5 +18,9 @@ libraryDependencies ++= Seq(
   // Scodec
   scodec_bits,
   // Etcd client
-  etcd_client
+  etcd_client,
+  // Testing
+  scalatest % "test",
+  wiremock % "test",
+  akka.testkit % "test"
 )
