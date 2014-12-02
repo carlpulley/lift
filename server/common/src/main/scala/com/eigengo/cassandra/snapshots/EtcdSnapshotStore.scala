@@ -1,6 +1,6 @@
 package com.eigengo.cassandra
 
-package snapshot
+package snapshots
 
 import akka.actor.Props
 

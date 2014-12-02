@@ -1,4 +1,4 @@
-package com.eigengo.cassandra.snapshot
+package com.eigengo.cassandra.snapshots
 
 import akka.persistence.cassandra.snapshot.{CassandraSnapshotStoreConfig, CassandraSnapshotStore => KCassandraSnapshotStore}
 import akka.serialization.SerializationExtension

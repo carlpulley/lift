@@ -138,7 +138,7 @@ Pods
 
 target
 
-journal
-snapshots
+/server/journal
+/server/snapshots
 
 
