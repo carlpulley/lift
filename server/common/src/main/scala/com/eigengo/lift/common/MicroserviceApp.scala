@@ -30,10 +30,6 @@ object MicroserviceApp {
 
 abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ BootedNode) extends App {
 
-  object EtcdKeys {
-    val ClusterNodes = "akka.cluster.nodes"
-  }
-
   import com.eigengo.lift.common.MicroserviceApp._
   private val name = "Lift"
   private val log = Logger(getClass)
@@ -45,6 +41,7 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
     import scala.concurrent.duration._
     val config = ConfigFactory.load()
     val etcd = new EtcdClient(config.getString("etcd.url"))
+    val nodeKey = config.getString("akka.etcd.key")
     log.info(s"Config loaded; etcd expected at $etcd")
 
     val retry = config.getDuration("akka.cluster.retry", TimeUnit.SECONDS).seconds
@@ -60,12 +57,12 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
     system.registerOnTermination(shutdown())
 
     // register this (cluster) actor system with etcd
-    etcd.setKey(s"${EtcdKeys.ClusterNodes}/${clusterAddressKey()}", "Joining").onComplete {
+    etcd.setKey(s"$nodeKey/${clusterAddressKey()}", "Joining").onComplete {
       case Success(_) =>
         // Register cluster MemberUp callback
         cluster.registerOnMemberUp {
           log.info(s"*********** Node ${cluster.selfAddress} booting up")
-          etcd.setKey(s"${EtcdKeys.ClusterNodes}/${clusterAddressKey()}", "MemberUp")
+          etcd.setKey(s"$nodeKey/${clusterAddressKey()}", "MemberUp")
           // boot the microservice code
           val bootedNode = f(system)
           bootedNode.api.foreach(startupApi)
@@ -89,7 +86,7 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
       log.info("Joining the cluster")
 
       // Fetch, from etcd, cluster nodes for seeding
-      etcd.listDir(EtcdKeys.ClusterNodes, recursive = false).onComplete {
+      etcd.listDir(nodeKey, recursive = false).onComplete {
         case Success(response: EtcdListResponse) ⇒
           log.debug(s"Using etcd response: $response")
           response.node.nodes match {
@@ -101,7 +98,7 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
               val seedNodes =
                 systemNodes
                   .filter(_.value == Some("MemberUp"))
-                  .map(n => clusterAddress(n.key.stripPrefix(s"/${EtcdKeys.ClusterNodes}/")))
+                  .map(n => clusterAddress(n.key.stripPrefix(s"/$nodeKey/")))
 
               log.info(s"Joining our cluster using the seed nodes: $seedNodes")
               cluster.joinSeedNodes(seedNodes)
@@ -112,7 +109,7 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
               system.scheduler.scheduleOnce(retry)(joinCluster())
 
             case None ⇒
-              log.warning(s"Failed to retrieve any keys for directory ${EtcdKeys.ClusterNodes} - retrying in $retry seconds")
+              log.warning(s"Failed to retrieve any keys for directory $nodeKey - retrying in $retry seconds")
               system.scheduler.scheduleOnce(retry)(joinCluster())
           }
 
@@ -131,10 +128,12 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
     }
 
     def shutdown(): Unit = {
-      // We first ensure that we de-register and leave the cluster!
-      etcd.deleteKey(s"${EtcdKeys.ClusterNodes}/${clusterAddressKey()}")
-      cluster.leave(cluster.selfAddress)
-      system.shutdown()
+      // First ensure that we de-register our etcd key and then we leave the cluster!
+      etcd.deleteKey(s"$nodeKey/${clusterAddressKey()}").onComplete {
+        case _ =>
+          cluster.leave(cluster.selfAddress)
+          system.shutdown()
+      }
     }
   }
 
