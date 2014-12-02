@@ -62,7 +62,7 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
         // Register cluster MemberUp callback
         cluster.registerOnMemberUp {
           log.info(s"*********** Node ${cluster.selfAddress} booting up")
-          etcd.setKey(s"$nodeKey/${clusterAddressKey()}", "MemberUp")
+          etcd.setKey(s"$nodeKey/${clusterAddressKey()}", "Up")
           // boot the microservice code
           val bootedNode = f(system)
           bootedNode.api.foreach(startupApi)
@@ -92,12 +92,12 @@ abstract class MicroserviceApp(microserviceName: String)(f: ActorSystem ⇒ Boot
           response.node.nodes match {
             // Have any actor systems registered and recorded themselves as up?
             case Some(systemNodes)
-              if systemNodes.filter(_.value == Some("MemberUp")).nonEmpty => {
+              if systemNodes.filter(_.value == Some("Up")).nonEmpty => {
 
               // At least one actor system address has been retrieved from etcd - we now need to check their respective etcd states and locate up cluster seed nodes
               val seedNodes =
                 systemNodes
-                  .filter(_.value == Some("MemberUp"))
+                  .filter(_.value == Some("Up"))
                   .map(n => clusterAddress(n.key.stripPrefix(s"/$nodeKey/")))
 
               log.info(s"Joining our cluster using the seed nodes: $seedNodes")

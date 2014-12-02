@@ -10,7 +10,7 @@ object Dependencies {
     val cluster               = "com.typesafe.akka"      %% "akka-cluster"                  % version
     val contrib               = "com.typesafe.akka"      %% "akka-contrib"                  % version
     val persistence           = "com.typesafe.akka"      %% "akka-persistence-experimental" % version
-    val persistence_cassandra = "com.github.krasserm"    %% "akka-persistence-cassandra"    % "0.3.4"
+    val persistence_cassandra = "com.github.krasserm"    %% "akka-persistence-cassandra"    % "0.4-SNAPSHOT"
     
     val testkit               = "com.typesafe.akka"      %% "akka-testkit"                  % version
   }
