@@ -21,6 +21,5 @@ libraryDependencies ++= Seq(
   etcd_client,
   // Testing
   scalatest % "test",
-  wiremock % "test",
   akka.testkit % "test"
 )
